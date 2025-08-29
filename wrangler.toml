@@ -1,0 +1,8 @@
+name = "hazardcleanupcanada"
+main = "src/worker.ts"
+compatibility_date = "2025-08-29"
+
+# Serve your Astro build as static assets
+[assets]
+directory = "./dist"
+binding   = "ASSETS"   # becomes env.ASSETS.fetch(request)
