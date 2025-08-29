@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hazardcleanup.ca/sitemap.xml
+Sitemap: https://hazardcleanup.ca/sitemap-images.xml
