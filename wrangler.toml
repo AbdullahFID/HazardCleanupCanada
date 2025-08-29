@@ -1,8 +1,15 @@
 name = "hazardcleanupcanada"
-main = "src/worker.ts"
+main = "worker.mjs"
 compatibility_date = "2025-08-29"
 
-# Serve your Astro build as static assets
 [assets]
-directory = "./dist"
-binding   = "ASSETS"   # becomes env.ASSETS.fetch(request)
+directory = "./dist"   # Astro build output
+binding   = "ASSETS"   # available as env.ASSETS.fetch(request)
+
+[placement]
+mode = "smart"
+
+[vars]                 # fine to commit
+EMAIL_FROM = "website@hazardcleanup.ca"
+EMAIL_TO   = "help@hazardcleanup.ca"
+POSTMARK_MESSAGE_STREAM = "outbound"
