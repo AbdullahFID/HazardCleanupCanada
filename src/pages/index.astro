@@ -1789,7 +1789,7 @@ contactForm?.addEventListener('submit', async (e) => {
   fn: T,
   wait = 150
 ): (...args: Parameters<T>) => void {
-  let t: ReturnType<typeof window.setTimeout> | undefined;
+  let t: number | undefined;
   return (...args: Parameters<T>) => {
     if (t !== undefined) window.clearTimeout(t);
     t = window.setTimeout(() => fn(...args), wait);

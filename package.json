@@ -11,7 +11,7 @@
   "dependencies": {
     "@astrojs/react": "^4.3.0",
     "@lucide/astro": "^0.542.0",
-    "astro": "^5.13.3",
+    "astro": "^5.13.5",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
@@ -21,6 +21,6 @@
   "devDependencies": {
     "@astrojs/sitemap": "^3.5.1",
     "@tailwindcss/vite": "^4.1.12",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4.1.12"
   }
 }
