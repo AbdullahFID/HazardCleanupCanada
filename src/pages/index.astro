@@ -1495,49 +1495,160 @@ import {
         setTimeout(() => el.remove(), 3000);
       }
 
-      // ===========================================
-      // CONTACT FORM
-      // ===========================================
-      window.onTurnstileCallback = token => { window.turnstileToken = token; };
+    // ===========================================
+// RATE LIMITING (IndexedDB)
+// ===========================================
+const DB_NAME = 'hazard-cleanup-db';
+const STORE_NAME = 'submissions';
+const RATE_LIMIT_HOURS = 72;
 
-      const contactForm = $('#contact-form');
-      const formSuccess = $('#form-success');
-
-      contactForm?.addEventListener('submit', async e => {
-        e.preventDefault();
-        const formData = new FormData(contactForm);
-        const name = formData.get('name')?.toString().trim();
-        const phone = formData.get('phone')?.toString().trim();
-        const email = formData.get('email')?.toString().trim();
-        const service = formData.get('service')?.toString();
-        const description = formData.get('description')?.toString();
-        const honeypot = formData.get('website')?.toString().trim();
-
-        if (honeypot) { showFormSuccess(); contactForm.reset(); return; }
-        if (!name || !phone) { showNotification('Please fill in name and phone.'); return; }
-
-        try {
-          await fetch('/api/contact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, phone, email, service, description, turnstileToken: window.turnstileToken || '' })
-          });
-        } catch {}
-        
-        showFormSuccess();
-        contactForm.reset();
-        window.turnstile?.reset();
-      });
-
-      function showFormSuccess() {
-        const fields = contactForm?.querySelectorAll('.form-group, .cf-turnstile, .grid, p');
-        fields?.forEach(f => f.style.display = 'none');
-        formSuccess?.classList.remove('hidden');
-        setTimeout(() => {
-          formSuccess?.classList.add('hidden');
-          fields?.forEach(f => f.style.display = '');
-        }, 3000);
+async function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
       }
+    };
+  });
+}
+
+async function getLastSubmission() {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get('lastSubmissionTime');
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || 0);
+    });
+  } catch {
+    return 0;
+  }
+}
+
+async function setLastSubmission(timestamp) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.put(timestamp, 'lastSubmissionTime');
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(true);
+    });
+  } catch {
+    return false;
+  }
+}
+
+// ===========================================
+// TURNSTILE CALLBACK
+// ===========================================
+window.onTurnstileCallback = function(token) {
+  window.turnstileToken = token;
+};
+
+// ===========================================
+// CONTACT FORM SUBMISSION
+// ===========================================
+const contactForm = $('#contact-form');
+const formSuccess = $('#form-success');
+
+contactForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(contactForm);
+  const name = (formData.get('name') || '').toString().trim();
+  const phone = (formData.get('phone') || '').toString().trim();
+  const email = (formData.get('email') || '').toString().trim();
+  const service = (formData.get('service') || '').toString();
+  const description = (formData.get('description') || '').toString();
+  const honeypot = (formData.get('website') || '').toString().trim();
+
+  // Honeypot check - silently succeed if filled
+  if (honeypot) {
+    showFormSuccess();
+    contactForm.reset();
+    return;
+  }
+
+  // Validate required fields
+  if (!name || !phone) {
+    showNotification('Please fill in your name and phone number.');
+    return;
+  }
+
+  // Rate limiting check
+  try {
+    const lastSubmission = await getLastSubmission();
+    if (lastSubmission && (Date.now() - lastSubmission) < RATE_LIMIT_HOURS * 3600000) {
+      showFormSuccess();
+      contactForm.reset();
+      return;
+    }
+  } catch (err) {
+    console.log('Rate limiting check failed:', err);
+  }
+
+  // Get Turnstile token
+  const turnstileToken = window.turnstileToken || '';
+
+  // Submit to API
+  try {
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        phone,
+        email,
+        service,
+        description,
+        website: honeypot,
+        turnstileToken
+      })
+    });
+
+    if (!response.ok) {
+      let result = {};
+      try { result = await response.json(); } catch {}
+      
+      if (result?.error === 'turnstile_failed') {
+        showNotification('Verification failed. Please check the Turnstile box and try again.');
+      } else if (result?.error === 'missing_fields') {
+        showNotification('Please fill in your name and phone number.');
+      } else {
+        showNotification('Thanks — we received your message.');
+      }
+    }
+  } catch (err) {
+    console.log('Form submission error:', err);
+  } finally {
+    try { await setLastSubmission(Date.now()); } catch {}
+    showFormSuccess();
+    contactForm.reset();
+    try { window.turnstile?.reset(); } catch {}
+  }
+});
+
+function showFormSuccess() {
+  const fields = contactForm?.querySelectorAll('.form-group, .cf-turnstile, .grid, p');
+  fields?.forEach(f => f.style.display = 'none');
+  formSuccess?.classList.remove('hidden');
+  setTimeout(() => {
+    formSuccess?.classList.add('hidden');
+    fields?.forEach(f => f.style.display = '');
+  }, 3000);
+}
 
       // ===========================================
       // LAZY LOAD MAP
