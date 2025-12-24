@@ -4,7 +4,7 @@ import tailwind from "@tailwindcss/vite";
 import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
-  output: "hybrid",  // or "server" for full SSR
+  output: "server",  // or "server" for full SSR
   adapter: cloudflare(),
   integrations: [react()],
   vite: {
