@@ -1,6 +1,7 @@
 name = "hazardcleanupcanada"
 main = "dist/_worker.js/index.js"
 compatibility_date = "2024-12-24"
+compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "./dist"
