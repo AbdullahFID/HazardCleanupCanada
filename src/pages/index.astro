@@ -1495,7 +1495,9 @@ import {
         setTimeout(() => el.remove(), 3000);
       }
 
-    // ===========================================
+ 
+
+// ===========================================
 // RATE LIMITING (IndexedDB)
 // ===========================================
 const DB_NAME = 'hazard-cleanup-db';
@@ -1505,10 +1507,8 @@ const RATE_LIMIT_HOURS = 72;
 async function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
-    
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
-    
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -1525,7 +1525,6 @@ async function getLastSubmission() {
       const transaction = db.transaction([STORE_NAME], 'readonly');
       const store = transaction.objectStore(STORE_NAME);
       const request = store.get('lastSubmissionTime');
-      
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result || 0);
     });
@@ -1541,7 +1540,6 @@ async function setLastSubmission(timestamp) {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
       const request = store.put(timestamp, 'lastSubmissionTime');
-      
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(true);
     });
@@ -1560,8 +1558,8 @@ window.onTurnstileCallback = function(token) {
 // ===========================================
 // CONTACT FORM SUBMISSION
 // ===========================================
-const contactForm = $('#contact-form');
-const formSuccess = $('#form-success');
+const contactForm = document.getElementById('contact-form');
+const formSuccess = document.getElementById('form-success');
 
 contactForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1576,7 +1574,7 @@ contactForm?.addEventListener('submit', async (e) => {
 
   // Honeypot check - silently succeed if filled
   if (honeypot) {
-    showFormSuccess();
+    showSuccessMessage();
     contactForm.reset();
     return;
   }
@@ -1591,7 +1589,7 @@ contactForm?.addEventListener('submit', async (e) => {
   try {
     const lastSubmission = await getLastSubmission();
     if (lastSubmission && (Date.now() - lastSubmission) < RATE_LIMIT_HOURS * 3600000) {
-      showFormSuccess();
+      showSuccessMessage();
       contactForm.reset();
       return;
     }
@@ -1634,22 +1632,22 @@ contactForm?.addEventListener('submit', async (e) => {
     console.log('Form submission error:', err);
   } finally {
     try { await setLastSubmission(Date.now()); } catch {}
-    showFormSuccess();
+    showSuccessMessage();
     contactForm.reset();
     try { window.turnstile?.reset(); } catch {}
   }
 });
 
-function showFormSuccess() {
-  const fields = contactForm?.querySelectorAll('.form-group, .cf-turnstile, .grid, p');
-  fields?.forEach(f => f.style.display = 'none');
+function showSuccessMessage() {
+  // Hide the entire form, show success message
+  contactForm.style.display = 'none';
   formSuccess?.classList.remove('hidden');
+  
   setTimeout(() => {
     formSuccess?.classList.add('hidden');
-    fields?.forEach(f => f.style.display = '');
+    contactForm.style.display = 'block';
   }, 3000);
 }
-
       // ===========================================
       // LAZY LOAD MAP
       // ===========================================
