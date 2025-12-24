@@ -2,10 +2,12 @@
   "name": "biohazard-clean",
   "type": "module",
   "version": "0.0.1",
+  
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "deploy": "wrangler pages deploy dist",
     "astro": "astro"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
   "devDependencies": {
     "@astrojs/sitemap": "^3.6.0",
     "@tailwindcss/vite": "^4.1.17",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "wrangler": "^4.54.0"
   }
 }
