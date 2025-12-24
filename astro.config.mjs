@@ -1,14 +1,20 @@
-import { defineConfig } from "astro/config";
-import react from "@astrojs/react";
-import tailwind from "@tailwindcss/vite";
-import cloudflare from "@astrojs/cloudflare";
+import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+import cloudflare from '@astrojs/cloudflare';
+import tailwindcss from '@tailwindcss/vite';
+import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  output: "server",  // or "server" for full SSR
+  site: 'https://hazardcleanup.ca',
+  output: 'server',
   adapter: cloudflare(),
-  integrations: [react()],
+  integrations: [react(), sitemap()],
   vite: {
-    plugins: [tailwind()],
+    plugins: [tailwindcss()],
+    resolve: {
+      alias: import.meta.env.PROD && {
+        "react-dom/server": "react-dom/server.edge",
+      },
+    },
   },
-  site: "https://hazardcleanup.ca", 
 });
